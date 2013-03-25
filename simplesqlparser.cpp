@@ -22,8 +22,6 @@ public:
 
     bool isAggregatedQuery;
 
-    bool error_unaggregated_args;
-    bool error_select_nested_in_select;
     QSet<QString> unAggregatedColumns;
     QueryContext* parent;
 
@@ -37,8 +35,6 @@ public:
         inHaving = false;
         parent = NULL;
 
-        error_unaggregated_args = false;
-        error_select_nested_in_select = false;
     }
 
     QueryContext* newSubContext() {
@@ -46,14 +42,14 @@ public:
         ret->parent = this;
         return ret;
     }
-    QueryContext* exitSubContext() {
-        if(this->isAggregatedQuery && !this->unAggregatedColumns.empty())
-            this->error_unaggregated_args = true;
 
-        this->parent->error_select_nested_in_select =
-                (this->parent->error_select_nested_in_select || this->error_select_nested_in_select);
-        this->parent->error_unaggregated_args =
-                (this->parent->error_unaggregated_args || this->error_unaggregated_args);
+    bool use_of_unaggregated_args(){
+        if(this->isAggregatedQuery && !this->unAggregatedColumns.empty())
+            return true;
+        return false;
+    }
+
+    QueryContext* exitSubContext() {
         QueryContext* ret = this->parent;
         delete this;
         return ret;
@@ -65,12 +61,11 @@ SimpleSqlParser::SimpleSqlParser()
 {
     qContext = new QueryContext();
     lastToken="";
-}
 
-//static bool td_string_literal_quote_char(QString &str, QChar qc);
-//static bool td_expr(QString &str);
-//static bool td_select_stmt(QString &str);
-//static bool td_join_source(QString &str);
+    error_unaggregated_args = false;
+    error_select_nested_in_select = false;
+    error_nested_call_to_aggregated_func = false;
+}
 
 static const char* keywords[] = {
 "ABORT","ACTION", "ADD", "AFTER", "ALL",    "ALTER",    "ANALYZE",    "AND",    "AS",    "ASC",
@@ -393,6 +388,8 @@ bool SimpleSqlParser::td_simple_expr(QString &str) {
             }RB_BLOCK_END();
         }
         RB_TEST_COND(e, td_accept(str,")"));
+        if(prevInAggFuncVal)
+            error_nested_call_to_aggregated_func = true;
         qContext->inAggregatedFunc = prevInAggFuncVal;
         return true;
     }RB_BLOCK_END();
@@ -620,7 +617,7 @@ bool SimpleSqlParser::td_select_core(QString &str) {
         return false;
 
     if(qContext->inSelectArgs)
-        qContext->error_select_nested_in_select = true;
+        error_select_nested_in_select = true;
 
     qContext = qContext->newSubContext();
     qContext->inSelectArgs = true;
@@ -666,6 +663,9 @@ bool SimpleSqlParser::td_select_core(QString &str) {
         RB_TEST_COND(h, td_expr(str));
     }RB_BLOCK_END();
     qContext->inHaving = false;
+
+    if(qContext->use_of_unaggregated_args())
+        this->error_unaggregated_args = true;
 
     qContext = qContext->exitSubContext();
     return true;
@@ -733,9 +733,24 @@ void SimpleSqlParser::parse(QString str)
 {
     QString str_copy(str);
     td_parse(str_copy);
-    if(qContext->error_unaggregated_args)
-        qDebug() << "selection of unaggregated args detected";
-    if(qContext->error_select_nested_in_select)
-        qDebug() << "nested select in select line detected";
 
+    if(error_unaggregated_args)
+        qDebug() << "selection of unaggregated args detected";
+    if(error_select_nested_in_select)
+        qDebug() << "nested select in select line detected";
+    if(error_nested_call_to_aggregated_func)
+        qDebug() << "neted call to aggregated function detected ";
 }
+
+bool SimpleSqlParser::detected_error_unaggregated_args(){
+    return error_unaggregated_args;
+}
+
+bool SimpleSqlParser::detected_error_select_nested_in_select(){
+    return error_select_nested_in_select;
+}
+
+bool SimpleSqlParser::detected_error_nested_call_to_aggregated_func(){
+    return error_nested_call_to_aggregated_func;
+}
+

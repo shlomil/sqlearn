@@ -8,11 +8,19 @@ class SimpleSqlParser
 public:
     SimpleSqlParser();
     void parse(QString str);
+    bool detected_error_unaggregated_args();
+    bool detected_error_select_nested_in_select();
+    bool detected_error_nested_call_to_aggregated_func();
+
 
 private:
     class QueryContext;
     QueryContext* qContext;
     QString lastToken;
+
+    bool error_unaggregated_args;
+    bool error_select_nested_in_select;
+    bool error_nested_call_to_aggregated_func;
 
     bool td_accept(QString &str, QString acc_str);
     bool td_accept(QString &str, int count);

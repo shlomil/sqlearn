@@ -2,6 +2,7 @@
 #include <QtGui>
 #include "sqleditor.h"
 #include "ui_sqleditor.h"
+#include "simplesqlparser.h"
 
 void sqleditor::updateTitle() {
     this->setWindowTitle((isUnsaved ? QString("*") : QString("")) + queryName);
@@ -38,9 +39,18 @@ void sqleditor::exec()
 
     if (model->lastError().type() != QSqlError::NoError)
         ui->statusLine->setText(model->lastError().text());
-    else if (model->query().isSelect())
+    else if (model->query().isSelect()) {
+        SimpleSqlParser p;
+        p.parse(ui->sqlEdit->toPlainText());
+        if(p.detected_error_unaggregated_args())
+            QMessageBox::critical(this, tr("Selection of non-aggregated columns!"), tr("In an aggregated query you should select only aggregated columns or use aggregation functions"));
+        if(p.detected_error_select_nested_in_select())
+            QMessageBox::critical(this, tr("Nested select query in the select line!"), tr(""));
+        if(p.detected_error_nested_call_to_aggregated_func())
+            QMessageBox::critical(this, tr("PARSER ERROR"), tr("Selection of non-aggregated columns!"));
+
         ui->statusLine->setText(tr("Query OK."));
-    else
+    } else
         ui->statusLine->setText(tr("Query OK, number of affected rows: %1").arg(model->query().numRowsAffected()));
 
     updateActions();

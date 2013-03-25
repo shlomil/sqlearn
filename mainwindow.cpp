@@ -1,6 +1,5 @@
 #include <QtGui>
 #include "mainwindow.h"
-#include "ui_mainwindow.h"
 #include "simplesqlparser.h"
 
 MainWindow::MainWindow(QWidget *parent) :
