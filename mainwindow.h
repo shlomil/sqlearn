@@ -71,6 +71,7 @@ private slots:
     void saveAs();
     void close();
     void queryListItemDoubleClicked(QModelIndex);
+    void showQueriesContextMenu(const QPoint& pos);
 };
 
 #endif // MAINWINDOW_H

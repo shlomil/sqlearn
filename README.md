@@ -9,11 +9,7 @@ A training tool for Databases/SQL course.
 * As SQLite is sometimes too permissive we would like to prevent/alert user on : selection of non-aggregated fields in an aggregated query, double aggregated functions, nested selets in select parameter list. This requres implementing a simple SQL parser to detect these cases.
 
 ## TODO:
-* delete query
-* cancel rename on double click on tables
 * double click to show table
-* adding a label to table/queroes lists
-* context menu on right click on query to delete it
 * 'Window' menu to arrange windows.
 * 'Query' menu for 'new query' / 'delete query option'
 * 'about' menu.

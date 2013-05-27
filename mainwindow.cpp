@@ -13,16 +13,39 @@ MainWindow::MainWindow(QWidget *parent) :
     createMenus();
 
     QSplitter* qs1 = new QSplitter();
-    QSplitter* qs2 = new QSplitter();
+    QSplitter* qs2 = new QSplitter();    
+
     tablesListView = new QListView();
+    tablesListView->setEditTriggers(QAbstractItemView::NoEditTriggers);
     queriesListView = new QListView();
     queriesListView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    queriesListView->setContextMenuPolicy(Qt::CustomContextMenu);
+
+    connect(queriesListView, SIGNAL(customContextMenuRequested(const QPoint&)),
+        this, SLOT(showQueriesContextMenu(const QPoint&)));
 
     connect(queriesListView, SIGNAL(doubleClicked(QModelIndex)),
                  this, SLOT(queryListItemDoubleClicked(QModelIndex)));
 
-    qs2->addWidget(tablesListView);
-    qs2->addWidget(queriesListView);
+    QVBoxLayout* tablesLayout = new QVBoxLayout();
+    tablesLayout->setSpacing(0);
+    tablesLayout->setMargin(0);
+    tablesLayout->addWidget(new QLabel(" Tables:"));
+    tablesLayout->addWidget(tablesListView);
+    QWidget* tablesWidget = new QWidget();
+    tablesWidget->setLayout(tablesLayout);
+
+    QVBoxLayout* queriesLayout = new QVBoxLayout();
+    queriesLayout->setMargin(0);
+    queriesLayout->setSpacing(0);
+    queriesLayout->addWidget(new QLabel(" Queries:"));
+    queriesLayout->addWidget(queriesListView);
+    QWidget* queriesWidget = new QWidget();
+    queriesWidget->setLayout(queriesLayout);
+
+
+    qs2->addWidget(tablesWidget);
+    qs2->addWidget(queriesWidget);
     qs2->setOrientation(Qt::Vertical);
 
     qs2->setVisible(true);
@@ -413,6 +436,26 @@ void MainWindow::queryListItemDoubleClicked(QModelIndex index)
 
     openEditors.insert(queryName, create_sqleditor_window(queryName, queries.value(queryName), false));
 }
+
+void MainWindow::showQueriesContextMenu(const QPoint& pos)
+{
+    QPoint globalPos = queriesListView->mapToGlobal(pos);
+    QMenu querieContextMenu;
+    querieContextMenu.addAction("Delete");
+
+    QAction* selectedItem = querieContextMenu.exec(globalPos);
+    if (selectedItem)
+    {
+        QString selectedQuery = queriesListView->selectionModel()->selectedIndexes().at(0).data().toString();
+        if(openEditors.keys().contains(selectedQuery))
+            openEditors[selectedQuery]->parentWidget()->close();
+        if(queries.contains(selectedQuery))
+            queries.remove(selectedQuery);
+        updateAllUi();
+    }
+}
+
+
 
 void MainWindow::on_sqleditorClosed(QCloseEvent *event, QString name)
 {
