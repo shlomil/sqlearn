@@ -64,7 +64,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     updateTablesListView();
 
-    newFile();
+    reset_project();
 }
 
 MainWindow::~MainWindow()
@@ -113,9 +113,30 @@ void MainWindow::saveAs()
 
 
 
-void MainWindow::close()
-{
-    newFile();
+void MainWindow::close() {
+    int ret = QMessageBox::Discard;
+
+    if(!isNew && isUnsaved) {
+            QMessageBox msgBox;
+            msgBox.setText("The file has been modified.");
+            msgBox.setInformativeText("Do you want to save your changes?");
+            msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+            msgBox.setDefaultButton(QMessageBox::Save);
+            ret = msgBox.exec();
+    }
+
+    if(ret == QMessageBox::Cancel)
+    {
+        return;
+    }
+    else if(ret == QMessageBox::Save)
+    {
+        save();
+        if(!isUnsaved)
+            reset_project();
+    }
+    // else if(ret == QMessageBox::Discard)
+    reset_project();
 }
 
 
@@ -210,7 +231,12 @@ QByteArray MainWindow::tmp_db_to_byte_array()
     return ret;
 }
 
-void MainWindow::newFile()
+void MainWindow::newFile(){
+    close();
+    reset_project();
+}
+
+void MainWindow::reset_project()
 {
     static int tmpNameCounter = 1;
 
@@ -276,25 +302,6 @@ void MainWindow::createActions()
     exitAct->setStatusTip(tr("Exit the application"));
     connect(exitAct, SIGNAL(triggered()), qApp, SLOT(closeAllWindows()));
 
-/*
-    cutAct = new QAction(QIcon(":/images/cut.png"), tr("Cu&t"), this);
-    cutAct->setShortcuts(QKeySequence::Cut);
-    cutAct->setStatusTip(tr("Cut the current selection's contents to the "
-                            "clipboard"));
-    connect(cutAct, SIGNAL(triggered()), this, SLOT(cut()));
-
-    copyAct = new QAction(QIcon(":/images/copy.png"), tr("&Copy"), this);
-    copyAct->setShortcuts(QKeySequence::Copy);
-    copyAct->setStatusTip(tr("Copy the current selection's contents to the "
-                             "clipboard"));
-    connect(copyAct, SIGNAL(triggered()), this, SLOT(copy()));
-
-    pasteAct = new QAction(QIcon(":/images/paste.png"), tr("&Paste"), this);
-    pasteAct->setShortcuts(QKeySequence::Paste);
-    pasteAct->setStatusTip(tr("Paste the clipboard's contents into the current "
-                              "selection"));
-    connect(pasteAct, SIGNAL(triggered()), this, SLOT(paste()));
-*/
     closeSEAct = new QAction(tr("Cl&ose"), this);
     closeSEAct->setStatusTip(tr("Close the active window"));
     connect(closeSEAct, SIGNAL(triggered()),
@@ -343,23 +350,20 @@ void MainWindow::createMenus()
 {
     fileMenu = menuBar()->addMenu(tr("&File"));
     fileMenu->addAction(newAct);
-    fileMenu->addAction(newQueryAct);
 
     fileMenu->addAction(openAct);
     fileMenu->addAction(saveAct);
     fileMenu->addAction(saveAsAct);
     fileMenu->addAction(closeAct);
-    /*fileMenu->addSeparator();
+    fileMenu->addSeparator();
     QAction *action = fileMenu->addAction(tr("Switch layout direction"));
-    connect(action, SIGNAL(triggered()), this, SLOT(switchLayoutDirection()));*/
+    connect(action, SIGNAL(triggered()), this, SLOT(switchLayoutDirection()));
     fileMenu->addSeparator();
     fileMenu->addAction(exitAct);
-/*
-    editMenu = menuBar()->addMenu(tr("&Edit"));
-    editMenu->addAction(cutAct);
-    editMenu->addAction(copyAct);
-    editMenu->addAction(pasteAct);
-*/
+
+    queryMenu = menuBar()->addMenu(tr("&Query"));
+    queryMenu->addAction(newQueryAct);
+
     windowMenu = menuBar()->addMenu(tr("&Window"));
     updateWindowMenu();
     connect(windowMenu, SIGNAL(aboutToShow()), this, SLOT(updateWindowMenu()));
@@ -391,15 +395,6 @@ void MainWindow::updateWindowMenu()
 
     for (int i = 0; i < windows.size(); ++i) {
         sqleditor *child = qobject_cast<sqleditor *>(windows.at(i)->widget());
-
-//        QString text;
-//        if (i < 9) {
-//            text = tr("&%1 %2").arg(i + 1)
-//                               .arg(child->userFriendlyCurrentFile());
-//        } else {
-//            text = tr("%1 %2").arg(i + 1)
-//                              .arg(child->userFriendlyCurrentFile());
-//        }
         QAction *action  = windowMenu->addAction(child->getQueryName());
         action->setCheckable(true);
         action ->setChecked(child == activeSqlEditor());
@@ -582,3 +577,33 @@ void MainWindow::setActiveSubWindow(QWidget *window)
         return;
     mdiArea->setActiveSubWindow(qobject_cast<QMdiSubWindow *>(window));
 }
+
+void MainWindow::closeEvent(QCloseEvent *event)
+ {
+    int ret = QMessageBox::Discard;
+
+    if(isUnsaved) {
+            QMessageBox msgBox;
+            msgBox.setText("The file has been modified.");
+            msgBox.setInformativeText("Do you want to save changes?");
+            msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+            msgBox.setDefaultButton(QMessageBox::Save);
+            ret = msgBox.exec();
+    }
+
+    if(ret == QMessageBox::Cancel)
+    {
+        event->ignore();
+        return;
+    }
+    else if(ret == QMessageBox::Save)
+    {
+        save();
+        if(!isUnsaved)
+            event->ignore();
+        else event->accept();
+        return;
+    }
+    // else if(ret == QMessageBox::Discard)
+    event->accept();
+ }

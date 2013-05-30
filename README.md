@@ -10,6 +10,5 @@ A training tool for Databases/SQL course.
 
 ## TODO:
 * double click to show table
-* 'Query' menu for 'new query' / 'delete query option'
+* context menu to rename a query
 * export option in file menu to export sqlearn file into separate sqlite db, and text files with queries
-* new project discards unsaved project - fix it.

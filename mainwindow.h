@@ -26,10 +26,14 @@ public slots:
 
 signals:
     void querySaved(QString,QString);
+
+protected:
+    void closeEvent(QCloseEvent *event);
     
 private:
     QMap<QString, sqleditor*> openEditors;
     sqleditor* create_sqleditor_window(QString title, QString sql, bool isNew);
+    void reset_project();
     sqleditor *activeSqlEditor();
     QMdiSubWindow *findSqlEditor(const QString &queryName);
     QString dbFilename;
@@ -57,6 +61,7 @@ private:
     QMdiArea *mdiArea;
     QMenu *fileMenu;
     QMenu *editMenu;
+    QMenu *queryMenu;
     QMenu *windowMenu;
     QMenu *helpMenu;
     QAction *newAct;
