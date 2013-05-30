@@ -64,6 +64,10 @@ void sqleditor::updateActions()
 
 }
 
+QString sqleditor::getQueryName() {
+    return queryName;
+}
+
 void sqleditor::insertRow()
 {
     QSqlTableModel *model = qobject_cast<QSqlTableModel *>(ui->table->model());

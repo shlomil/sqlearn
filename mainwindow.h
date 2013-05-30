@@ -30,8 +30,11 @@ signals:
 private:
     QMap<QString, sqleditor*> openEditors;
     sqleditor* create_sqleditor_window(QString title, QString sql, bool isNew);
+    sqleditor *activeSqlEditor();
+    QMdiSubWindow *findSqlEditor(const QString &queryName);
     QString dbFilename;
     QString sqlearnFilename;
+    QSignalMapper* windowMapper;
     int newQueryCounter;
     bool isNew;
     bool isUnsaved;
@@ -62,7 +65,16 @@ private:
     QAction *saveAct;
     QAction *saveAsAct;
     QAction *closeAct;
+    QAction *closeSEAct;
+    QAction *closeAllAct;
+    QAction *tileAct;
+    QAction *cascadeAct;
+    QAction *nextAct;
+    QAction *previousAct;
+    QAction *separatorAct;
     QAction *exitAct;
+    QAction *aboutAct;
+    QAction *aboutQtAct;
     QMap<QString, QString> queries;
 private slots:
     void newFile();
@@ -70,8 +82,11 @@ private slots:
     void save();
     void saveAs();
     void close();
+    void about();
     void queryListItemDoubleClicked(QModelIndex);
     void showQueriesContextMenu(const QPoint& pos);
+    void setActiveSubWindow(QWidget *window);
+    void updateWindowMenu();
 };
 
 #endif // MAINWINDOW_H

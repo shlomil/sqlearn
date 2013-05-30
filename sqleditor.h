@@ -22,6 +22,7 @@ public:
     void insertRow();
     void deleteRow();
     void updateActions();
+    QString getQueryName();
 
 public slots:
     void exec();

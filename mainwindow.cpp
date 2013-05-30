@@ -9,6 +9,11 @@ MainWindow::MainWindow(QWidget *parent) :
     this->mdiArea = new QMdiArea();
     mdiArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     mdiArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+
+    windowMapper = new QSignalMapper(this);
+    connect(windowMapper, SIGNAL(mapped(QWidget*)),
+            this, SLOT(setActiveSubWindow(QWidget*)));
+
     createActions();
     createMenus();
 
@@ -289,10 +294,10 @@ void MainWindow::createActions()
     pasteAct->setStatusTip(tr("Paste the clipboard's contents into the current "
                               "selection"));
     connect(pasteAct, SIGNAL(triggered()), this, SLOT(paste()));
-
-    closeAct = new QAction(tr("Cl&ose"), this);
-    closeAct->setStatusTip(tr("Close the active window"));
-    connect(closeAct, SIGNAL(triggered()),
+*/
+    closeSEAct = new QAction(tr("Cl&ose"), this);
+    closeSEAct->setStatusTip(tr("Close the active window"));
+    connect(closeSEAct, SIGNAL(triggered()),
             mdiArea, SLOT(closeActiveSubWindow()));
 
     closeAllAct = new QAction(tr("Close &All"), this);
@@ -325,13 +330,12 @@ void MainWindow::createActions()
     separatorAct->setSeparator(true);
 
     aboutAct = new QAction(tr("&About"), this);
-    aboutAct->setStatusTip(tr("Show the application's About box"));
+    aboutAct->setStatusTip(tr("Show the SQLearn's About box"));
     connect(aboutAct, SIGNAL(triggered()), this, SLOT(about()));
 
     aboutQtAct = new QAction(tr("About &Qt"), this);
     aboutQtAct->setStatusTip(tr("Show the Qt library's About box"));
     connect(aboutQtAct, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
-    */
 }
 
 
@@ -355,7 +359,7 @@ void MainWindow::createMenus()
     editMenu->addAction(cutAct);
     editMenu->addAction(copyAct);
     editMenu->addAction(pasteAct);
-
+*/
     windowMenu = menuBar()->addMenu(tr("&Window"));
     updateWindowMenu();
     connect(windowMenu, SIGNAL(aboutToShow()), this, SLOT(updateWindowMenu()));
@@ -365,7 +369,43 @@ void MainWindow::createMenus()
     helpMenu = menuBar()->addMenu(tr("&Help"));
     helpMenu->addAction(aboutAct);
     helpMenu->addAction(aboutQtAct);
-    */
+
+
+}
+
+void MainWindow::updateWindowMenu()
+{
+    windowMenu->clear();
+    windowMenu->addAction(closeSEAct);
+    windowMenu->addAction(closeAllAct);
+    windowMenu->addSeparator();
+    windowMenu->addAction(tileAct);
+    windowMenu->addAction(cascadeAct);
+    windowMenu->addSeparator();
+    windowMenu->addAction(nextAct);
+    windowMenu->addAction(previousAct);
+    windowMenu->addAction(separatorAct);
+
+    QList<QMdiSubWindow *> windows = mdiArea->subWindowList();
+    separatorAct->setVisible(!windows.isEmpty());
+
+    for (int i = 0; i < windows.size(); ++i) {
+        sqleditor *child = qobject_cast<sqleditor *>(windows.at(i)->widget());
+
+//        QString text;
+//        if (i < 9) {
+//            text = tr("&%1 %2").arg(i + 1)
+//                               .arg(child->userFriendlyCurrentFile());
+//        } else {
+//            text = tr("%1 %2").arg(i + 1)
+//                              .arg(child->userFriendlyCurrentFile());
+//        }
+        QAction *action  = windowMenu->addAction(child->getQueryName());
+        action->setCheckable(true);
+        action ->setChecked(child == activeSqlEditor());
+        connect(action, SIGNAL(triggered()), windowMapper, SLOT(map()));
+        windowMapper->setMapping(action, windows.at(i));
+    }
 }
 
 void MainWindow::updateQueriesListView()
@@ -455,7 +495,11 @@ void MainWindow::showQueriesContextMenu(const QPoint& pos)
     }
 }
 
-
+void MainWindow::about()
+{
+   QMessageBox::about(this, tr("About SQLearn"),
+            tr("SQLearn - SQL training tool based on QT and SQLite."));
+}
 
 void MainWindow::on_sqleditorClosed(QCloseEvent *event, QString name)
 {
@@ -512,4 +556,29 @@ void MainWindow::load_from_file(QString fileName)
     isNew = false;
 
     updateQueriesListView();
+}
+
+sqleditor *MainWindow::activeSqlEditor()
+{
+    if (QMdiSubWindow *activeSubWindow = mdiArea->activeSubWindow())
+        return qobject_cast<sqleditor *>(activeSubWindow->widget());
+    return 0;
+}
+
+QMdiSubWindow *MainWindow::findSqlEditor(const QString &queryName)
+{
+
+    foreach (QMdiSubWindow *window, mdiArea->subWindowList()) {
+        sqleditor *mdiChild = qobject_cast<sqleditor *>(window->widget());
+        if (mdiChild->getQueryName() == queryName)
+            return window;
+    }
+    return 0;
+}
+
+void MainWindow::setActiveSubWindow(QWidget *window)
+{
+    if (!window)
+        return;
+    mdiArea->setActiveSubWindow(qobject_cast<QMdiSubWindow *>(window));
 }
