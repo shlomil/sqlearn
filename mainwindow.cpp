@@ -578,8 +578,7 @@ void MainWindow::setActiveSubWindow(QWidget *window)
     mdiArea->setActiveSubWindow(qobject_cast<QMdiSubWindow *>(window));
 }
 
-void MainWindow::closeEvent(QCloseEvent *event)
- {
+void MainWindow::closeEvent(QCloseEvent *event) {
     int ret = QMessageBox::Discard;
 
     if(isUnsaved) {
@@ -606,4 +605,11 @@ void MainWindow::closeEvent(QCloseEvent *event)
     }
     // else if(ret == QMessageBox::Discard)
     event->accept();
- }
+}
+
+void MainWindow::switchLayoutDirection() {
+    if (layoutDirection() == Qt::LeftToRight)
+        qApp->setLayoutDirection(Qt::RightToLeft);
+    else
+        qApp->setLayoutDirection(Qt::LeftToRight);
+}

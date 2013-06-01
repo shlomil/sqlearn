@@ -92,6 +92,7 @@ private slots:
     void showQueriesContextMenu(const QPoint& pos);
     void setActiveSubWindow(QWidget *window);
     void updateWindowMenu();
+    void switchLayoutDirection();
 };
 
 #endif // MAINWINDOW_H

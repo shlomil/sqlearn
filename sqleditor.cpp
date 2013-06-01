@@ -42,14 +42,14 @@ void sqleditor::exec()
     else if (model->query().isSelect()) {
         SimpleSqlParser p;
         p.parse(ui->sqlEdit->toPlainText());
+        ui->statusLine->setText(tr("Query might have issues."));
         if(p.detected_error_unaggregated_args())
-            QMessageBox::critical(this, tr("Selection of non-aggregated columns!"), tr("In an aggregated query you should select only aggregated columns or use aggregation functions"));
-        if(p.detected_error_select_nested_in_select())
-            QMessageBox::critical(this, tr("Nested select query in the select line!"), tr(""));
-        if(p.detected_error_nested_call_to_aggregated_func())
-            QMessageBox::critical(this, tr("PARSER ERROR"), tr("Selection of non-aggregated columns!"));
-
-        ui->statusLine->setText(tr("Query OK."));
+            QMessageBox::critical(this, tr("ERROR!"), tr("detected selection of un-aggregated column select in an aggregated query!\nIn an aggregated query you should select only aggregated columns or use aggregation functions"));
+        else if(p.detected_error_select_nested_in_select())
+            QMessageBox::critical(this, tr("ERROR!"), tr("Nested select query in the select line!"));
+        else if(p.detected_error_nested_call_to_aggregated_func())
+            QMessageBox::critical(this, tr("ERROR!"), tr("Cannot nest aggregated function calls!"));
+        else ui->statusLine->setText(tr("Query OK."));
     } else
         ui->statusLine->setText(tr("Query OK, number of affected rows: %1").arg(model->query().numRowsAffected()));
 
