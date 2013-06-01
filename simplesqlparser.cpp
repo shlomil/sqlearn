@@ -111,7 +111,7 @@ bool SimpleSqlParser::td_accept(QString &str, int count) {
 bool SimpleSqlParser::td_accept_any_word(QString &str) {
     str = str.trimmed();
     int i = 0;
-    while(i<str.length() && str.at(i).isLetterOrNumber())
+    while(i<str.length() && (str.at(i).isLetterOrNumber() || str.at(i)=='_'))
         i++;
     if(i==0)
         return false;
